@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal das Rinhas v3.1</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --primary-color: #2a2a2a;
+            --secondary-color: #3c3c3c;
+            --text-color: #f0f0f0;
+            --accent-color: #007bff;
+            --accent-hover: #0056b3;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --winner1: #ffd700;
+            --winner2: #c0c0c0;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1, h2, h3 { text-align: center; color: var(--accent-color); margin: 10px 0; }
+        
+        .panel {
+            background-color: var(--primary-color);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        /* --- LOADING OVERLAY --- */
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            font-size: 1.5em;
+        }
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--accent-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- GERAL --- */
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        label { font-weight: bold; }
+        input, select, textarea {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        textarea { resize: vertical; min-height: 150px; }
+        
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        button:hover { background-color: var(--accent-hover); }
+        button.secondary { background-color: var(--secondary-color); }
+        button.danger { background-color: var(--error-color); }
+        button.info { background-color: #17a2b8; }
+        button.info:hover { background-color: #138496; }
+
+        /* --- VIEW CONFRONTO --- */
+        .general-score-board {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-color);
+            margin-bottom: 20px;
+        }
+        .score-item { text-align: center; }
+        .score-value { font-size: 2.5em; font-weight: bold; display: block; }
+        .score-name { font-size: 1.1em; color: #aaa; }
+        .score-draws { font-size: 0.9em; color: #888; margin-top: 10px; }
+
+        .battle-selector-area {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--secondary-color);
+            flex-wrap: wrap;
+        }
+
+        .formations-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .formation-card {
+            background-color: var(--secondary-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .formation-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px;
+        }
+        .formation-footer {
+            margin-top: auto; border-top: 1px solid #444; padding-top: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .formation-img-container {
+            width: 100%;
+            height: 350px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .formation-img-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .formation-img-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* --- PLACAR DA BATALHA --- */
+        .battle-score-display {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--winner1);
+        }
+
+        .edit-score-btn {
+            cursor: pointer;
+            font-size: 0.6em;
+            margin-left: 5px;
+            opacity: 0.6;
+            color: var(--accent-color);
+            vertical-align: middle;
+        }
+        .edit-score-btn:hover { opacity: 1; transform: scale(1.2); }
+
+        /* --- TABELA --- */
+        .table-header-custom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: center; border: 1px solid #444; }
+        th { background-color: #222; }
+        
+        .btn-add-round {
+            background-color: var(--success-color);
+            color: white;
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            font-size: 20px;
+            border: none;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .load-more-container {
+            text-align: center;
+            padding: 10px;
+            background: #222;
+            border: 1px solid #444;
+            border-top: none;
+            cursor: pointer;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        .load-more-container:hover {
+            background: #333;
+            color: var(--accent-hover);
+        }
+
+        /* --- MODAIS --- */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: var(--primary-color);
+            padding: 20px;
+            width: 90%; max-width: 500px;
+            border-radius: 8px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .close-btn {
+            position: absolute; top: 10px; right: 15px;
+            font-size: 24px; cursor: pointer; color: #aaa;
+        }
+
+        @media (max-width: 768px) {
+            .formations-grid { grid-template-columns: 1fr; }
+            .general-score-board { gap: 20px; }
+            .battle-selector-area { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+    <span id="loadingText">Carregando...</span>
+</div>
+
+<div class="container">
+    <h1>Portal das Rinhas v3.1</h1>
+
+    <!-- MASTER SETUP VIEW (Aparece se não tiver config mestre) -->
+    <div id="masterSetupView" class="panel" style="display:none; text-align:center;">
+        <h2>Configuração Inicial (Master)</h2>
+        <p>O sistema agora usa um arquivo Mestre para gerenciar suas contas e migrações automaticamente.</p>
+        <p>Clique abaixo para converter sua configuração atual em uma Configuração Mestre.</p>
+        <button onclick="app.createMasterConfig()">Criar Configuração Mestre</button>
+    </div>
+
+    <!-- LOBBY VIEW -->
+    <div id="lobbyView" class="panel" style="display:none;">
+        <h2>Lobby de Confrontos</h2>
+        <div class="form-group">
+            <label>Selecione o Confronto (Dupla):</label>
+            <div style="display: flex; gap: 5px;">
+                <select id="confrontoSelector"></select>
+                <button class="danger" id="btnDeleteConfronto" title="Excluir Confronto">🗑️</button>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button id="loadConfrontoBtn">Entrar no Confronto</button>
+            <button class="secondary" id="btnManagePessoas">Gerenciar Pessoas</button>
+            <button class="secondary" id="btnManageDrafts">Gerenciar Drafts</button>
+            <button id="btnNewConfronto">Novo Confronto</button>
+        </div>
+        <div style="margin-top: 20px; text-align: center; border-top: 1px solid #333; padding-top: 10px;">
+            <button class="secondary" onclick="app.openBackupModal()">Backup / Migrar Dados</button>
+        </div>
+    </div>
+
+    <!-- CONFRONTO VIEW -->
+    <div id="confrontoView" class="panel" style="display: none;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <button class="secondary" onclick="app.showLobby()">Voltar</button>
+            <h2 id="confrontoTitle" style="margin: 0;"></h2>
+            <div style="width: 80px;"></div>
+        </div>
+
+        <!-- SELETOR DE BATALHA (FORMAÇÃO) -->
+        <div class="battle-selector-area" style="border-bottom: none; margin-bottom: 10px;">
+            <div style="flex-grow: 1;">
+                <label>Batalha Atual (Formação):</label>
+                <select id="battleSelector"></select>
+            </div>
+            <button class="info" onclick="app.openNotesModal()">📋 Anotações</button>
+            <button onclick="app.openNewBattleModal()">Nova Batalha</button>
+            <button class="danger" onclick="app.deleteCurrentBattle()">Excluir</button>
+        </div>
+
+        <!-- DETALHES DA BATALHA ATUAL -->
+        <div id="battleDetails" style="display: none;">
+            
+            <!-- Empates da Formação (Topo) -->
+            <div style="text-align: center; margin-bottom: 10px; color: #aaa;">
+                Empates (Formação): <strong id="drawsBattle">0</strong>
+                <span class="edit-score-btn" style="font-size: 1em;" onclick="app.editScore('battle', 'draws')">✎</span>
+            </div>
+
+            <!-- Formações -->
+            <div class="formations-grid">
+                <!-- P1 -->
+                <div class="formation-card">
+                    <div class="formation-header">
+                        <span id="p1DraftName">Draft A</span>
+                        <div>
+                            <span class="battle-score-display" id="p1ScoreBattle">0</span>
+                            <span class="edit-score-btn" style="font-size: 1em;" onclick="app.editScore('battle', 'p1')">✎</span>
+                        </div>
+                    </div>
+                    <div class="formation-img-container" id="p1Media"></div>
+                    <div class="formation-footer">
+                        <span id="p1NameFooter">P1</span>
+                        <span style="color: #888;">Geral: <strong id="p1GeneralFooter" style="color: var(--text-color);">0</strong></span>
+                    </div>
+                </div>
+                <!-- P2 -->
+                <div class="formation-card">
+                    <div class="formation-header">
+                        <span id="p2DraftName">Draft B</span>
+                        <div>
+                            <span class="battle-score-display" id="p2ScoreBattle">0</span>
+                            <span class="edit-score-btn" style="font-size: 1em;" onclick="app.editScore('battle', 'p2')">✎</span>
+                        </div>
+                    </div>
+                    <div class="formation-img-container" id="p2Media"></div>
+                    <div class="formation-footer">
+                        <span id="p2NameFooter">P2</span>
+                        <span style="color: #888;">Geral: <strong id="p2GeneralFooter" style="color: var(--text-color);">0</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empates Geral (Baixo) -->
+            <div style="text-align: center; margin-top: -10px; margin-bottom: 20px; font-size: 0.9em; opacity: 0.8;">
+                Empates (Geral): <strong id="drawsGeneralFooter">0</strong>
+                <span class="edit-score-btn" onclick="app.editScore('general', 'draws')">✎</span>
+            </div>
+
+            <!-- PLACAR GERAL -->
+            <div class="general-score-board" style="margin-bottom: 20px;">
+                <div class="score-item">
+                    <span class="score-name" id="p1NameGeneral">P1</span>
+                    <div>
+                        <span class="score-value" id="p1ScoreGeneral">0</span>
+                        <span class="edit-score-btn" onclick="app.editScore('general', 'p1')">✎ Editar</span>
+                    </div>
+                </div>
+                <div class="score-item">
+                    <span class="score-name" id="p2NameGeneral">P2</span>
+                    <div>
+                        <span class="score-value" id="p2ScoreGeneral">0</span>
+                        <span class="edit-score-btn" onclick="app.editScore('general', 'p2')">✎ Editar</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de Resultados -->
+            <div class="panel" style="background: #252525; padding: 0;">
+                <div class="table-header-custom" style="padding: 15px; margin:0;">
+                    <h3 style="margin:0;">Resultados desta Batalha</h3>
+                    <button class="btn-add-round" onclick="app.openAddResultModal()">+</button>
+                </div>
+                <table style="border: none;">
+                    <thead>
+                        <tr>
+                            <th style="border-left:none;">#</th>
+                            <th>P1</th>
+                            <th>P2</th>
+                            <th style="border-right:none;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody"></tbody>
+                </table>
+                <div id="loadMoreBtn" class="load-more-container" onclick="app.loadMoreResults()">
+                    Mostrar Mais Resultados
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAIS -->
+<!-- Notas -->
+<div id="notesModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="app.closeModal('notesModal')">&times;</span>
+        <h3>Anotações da Batalha</h3>
+        <p style="font-size:0.9em; color:#aaa;">Formações, substituições, curiosidades...</p>
+        <textarea id="battleNotes" placeholder="Escreva aqui..."></textarea>
+        <button onclick="app.saveNotes()" style="margin-top:10px; width:100%;">Salvar Anotações</button>
+    </div>
+</div>
+
+<div id="newBattleModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="app.closeModal('newBattleModal')">&times;</span>
+        <h3>Criar Nova Batalha</h3>
+        <div class="form-group">
+            <label id="lblDraftP1">Draft P1:</label>
+            <select id="newBattleDraft1"></select>
+        </div>
+        <div class="form-group">
+            <label id="lblDraftP2">Draft P2:</label>
+            <select id="newBattleDraft2"></select>
+        </div>
+        <button onclick="app.createBattle()">Criar Batalha</button>
+    </div>
+</div>
+
+<div id="newConfrontoModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="app.closeModal('newConfrontoModal')">&times;</span>
+        <h3>Novo Confronto (Dupla)</h3>
+        <div class="form-group">
+            <label>Nome do Confronto:</label>
+            <input type="text" id="newConfrontoName" placeholder="Ex: Clássico dos Amigos">
+        </div>
+        <div class="form-group">
+            <label>Pessoa 1:</label>
+            <select id="newConfrontoP1"></select>
+        </div>
+        <div class="form-group">
+            <label>Pessoa 2:</label>
+            <select id="newConfrontoP2"></select>
+        </div>
+        <button onclick="app.createConfronto()">Criar Confronto</button>
+    </div>
+</div>
+
+<div id="addResultModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="app.closeModal('addResultModal')">&times;</span>
+        <h3>Adicionar Resultado</h3>
+        <input type="hidden" id="editResultId">
+        <div class="form-group">
+            <label id="lblResP1">Gols P1</label>
+            <input type="number" id="resGolsP1" value="0" min="0">
+        </div>
+        <div class="form-group">
+            <label id="lblResP2">Gols P2</label>
+            <input type="number" id="resGolsP2" value="0" min="0">
+        </div>
+        <button onclick="app.saveResult()">Salvar</button>
+    </div>
+</div>
+
+<div id="managerModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <span class="close-btn" onclick="app.closeModal('managerModal')">&times;</span>
+        <h3 id="managerTitle">Gerenciar</h3>
+        <div id="managerContent"></div>
+    </div>
+</div>
+
+<!-- Modal de Backup -->
+<div id="backupModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="app.closeModal('backupModal')">&times;</span>
+        <h3>Backup e Migração Automática</h3>
+        <p>O sistema transferirá seus dados para a nova conta e atualizará o roteador automaticamente.</p>
+        
+        <div style="background:#333; padding:15px; border-radius:5px; margin-bottom:15px;">
+            <h4>1. Baixar Backup (Segurança)</h4>
+            <button onclick="app.downloadBackup()">⬇️ Baixar JSON de Segurança</button>
+        </div>
+
+        <div style="background:#333; padding:15px; border-radius:5px;">
+            <h4>2. Migrar para Nova Conta</h4>
+            <p style="font-size:0.9em; color:#ccc;">Cole a Master Key da NOVA conta. Deixe em branco para restaurar na atual.</p>
+            <div class="form-group">
+                <input type="text" id="targetApiKey" placeholder="Nova X-Master-Key">
+            </div>
+            <label for="restoreFile" class="button secondary" style="cursor:pointer; display:inline-block; padding:10px 15px; margin:0; width:100%; text-align:center;">
+                ⬆️ Selecionar Backup e Migrar
+            </label>
+            <input type="file" id="restoreFile" style="display:none" onchange="app.restoreBackup(this)">
+        </div>
+    </div>
+</div>
+
+<script>
+// --- CONFIGURAÇÃO MESTRE ---
+const BOOTSTRAP = {
+    MASTER_BIN_ID: '695aab1843b1c97be918f32c', 
+    MASTER_API_KEY: '$2a$10$67r/qqyTlUDuq3Xzz0dih.yXRiYX.6DFWxjfxu3rMTm3Sc/Sx7.Ce'
+};
+
+const app = {
+    config: {
+        activeApiKey: null,
+        activeLobbyId: null,
+        baseUrl: 'https://api.jsonbin.io/v3/b'
+    },
+    state: {
+        lobby: { pessoas: [], drafts: [], confrontos: [] },
+        currentConfronto: null,
+        currentBattleId: null,
+        visibleResults: 10 // Paginação
+    },
+
+    init: async () => {
+        const success = await app.loadMasterConfig();
+        
+        if (success) {
+            document.getElementById('loadConfrontoBtn').addEventListener('click', app.loadSelectedConfronto);
+            document.getElementById('btnNewConfronto').addEventListener('click', () => {
+                app.populatePeopleSelect('newConfrontoP1');
+                app.populatePeopleSelect('newConfrontoP2');
+                app.openModal('newConfrontoModal');
+            });
+            document.getElementById('btnDeleteConfronto').addEventListener('click', app.deleteConfronto);
+            document.getElementById('battleSelector').addEventListener('change', (e) => app.selectBattle(e.target.value));
+            document.getElementById('btnManagePessoas').addEventListener('click', app.openPeopleManager);
+            document.getElementById('btnManageDrafts').addEventListener('click', app.openDraftsManager);
+            
+            app.loadLobby();
+        } else {
+            app.promptMasterSetup();
+        }
+    },
+
+    // --- MASTER CONFIG LOGIC ---
+    loadMasterConfig: async () => {
+        app.showLoading('Conectando ao Mestre...');
+        try {
+            const res = await fetch(`${app.config.baseUrl}/${BOOTSTRAP.MASTER_BIN_ID}`, {
+                headers: { 'X-Master-Key': BOOTSTRAP.MASTER_API_KEY }
+            });
+            if(!res.ok) throw new Error("Falha na conexão mestre");
+            const json = await res.json();
+            const data = json.record;
+
+            if (data.isMasterConfig && data.activeApiKey && data.activeLobbyId) {
+                app.config.activeApiKey = data.activeApiKey;
+                app.config.activeLobbyId = data.activeLobbyId;
+                return true;
+            } 
+            
+            app.config.activeApiKey = BOOTSTRAP.MASTER_API_KEY;
+            app.config.activeLobbyId = BOOTSTRAP.MASTER_BIN_ID; 
+            return false;
+            
+        } catch (e) {
+            console.error(e);
+            return false;
+        } finally {
+            app.hideLoading();
+        }
+    },
+
+    promptMasterSetup: () => {
+        document.getElementById('lobbyView').style.display = 'none';
+        document.getElementById('masterSetupView').style.display = 'block';
+    },
+
+    createMasterConfig: async () => {
+        app.showLoading('Configurando Ambiente Mestre...');
+        try {
+            const res = await fetch(`${app.config.baseUrl}/${BOOTSTRAP.MASTER_BIN_ID}`, {
+                headers: { 'X-Master-Key': BOOTSTRAP.MASTER_API_KEY }
+            });
+            const json = await res.json();
+            const currentLobbyData = json.record;
+
+            const resCreate = await fetch(app.config.baseUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': BOOTSTRAP.MASTER_API_KEY,
+                    'X-Bin-Name': 'Lobby Real (Slave)'
+                },
+                body: JSON.stringify(currentLobbyData)
+            });
+            const metaCreate = await resCreate.json();
+            const newLobbyId = metaCreate.metadata.id;
+
+            const masterConfigData = {
+                isMasterConfig: true,
+                activeApiKey: BOOTSTRAP.MASTER_API_KEY, 
+                activeLobbyId: newLobbyId,
+                updatedAt: new Date().toISOString()
+            };
+
+            await fetch(`${app.config.baseUrl}/${BOOTSTRAP.MASTER_BIN_ID}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': BOOTSTRAP.MASTER_API_KEY
+                },
+                body: JSON.stringify(masterConfigData)
+            });
+
+            alert("Ambiente Mestre configurado! Recarregando...");
+            location.reload();
+
+        } catch (e) {
+            alert("Erro ao criar Master: " + e.message);
+            app.hideLoading();
+        }
+    },
+
+    updateMasterPointer: async (newApiKey, newLobbyId) => {
+        const masterConfigData = {
+            isMasterConfig: true,
+            activeApiKey: newApiKey,
+            activeLobbyId: newLobbyId,
+            updatedAt: new Date().toISOString()
+        };
+        await fetch(`${app.config.baseUrl}/${BOOTSTRAP.MASTER_BIN_ID}`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-Master-Key': BOOTSTRAP.MASTER_API_KEY 
+            },
+            body: JSON.stringify(masterConfigData)
+        });
+    },
+
+    // --- API HELPER (DYNAMIC) ---
+    api: async (url, method = 'GET', body = null, customKey = null) => {
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-Master-Key': customKey || app.config.activeApiKey 
+        };
+        const opts = { method, headers };
+        if (body) opts.body = JSON.stringify(body);
+        
+        const res = await fetch(url, opts);
+        if (!res.ok) throw new Error(`API Error: ${res.status}`);
+        return await res.json();
+    },
+
+    showLoading: (txt) => {
+        document.getElementById('loadingText').textContent = txt || 'Carregando...';
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    },
+    hideLoading: () => document.getElementById('loadingOverlay').style.display = 'none',
+
+    // --- LOBBY LOGIC ---
+    loadLobby: async () => {
+        app.showLoading('Carregando Lobby...');
+        try {
+            const data = await app.api(`${app.config.baseUrl}/${app.config.activeLobbyId}`);
+            const record = data.record;
+            app.state.lobby = {
+                pessoas: record.pessoas || [],
+                drafts: record.drafts || [],
+                confrontos: record.confrontos || [] 
+            };
+            document.getElementById('masterSetupView').style.display = 'none';
+            document.getElementById('lobbyView').style.display = 'block';
+            app.renderLobby();
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao carregar lobby: " + e.message);
+        } finally {
+            app.hideLoading();
+        }
+    },
+
+    saveLobby: async () => {
+        await app.api(`${app.config.baseUrl}/${app.config.activeLobbyId}`, 'PUT', app.state.lobby);
+    },
+
+    renderLobby: () => {
+        const sel = document.getElementById('confrontoSelector');
+        sel.innerHTML = '<option value="">-- Selecione --</option>';
+        app.state.lobby.confrontos.forEach(c => {
+            sel.innerHTML += `<option value="${c.binUrl}">${c.nome}</option>`;
+        });
+    },
+
+    deleteConfronto: async () => {
+        const binId = document.getElementById('confrontoSelector').value;
+        if(!binId) return alert("Selecione um confronto para excluir.");
+        if(!confirm("Tem certeza que deseja excluir este confronto e todo o seu histórico?")) return;
+
+        app.showLoading('Excluindo...');
+        try {
+            app.state.lobby.confrontos = app.state.lobby.confrontos.filter(c => c.binUrl !== binId);
+            await app.saveLobby();
+            app.renderLobby();
+            alert("Confronto excluído.");
+        } catch (e) {
+            alert("Erro ao excluir: " + e.message);
+        } finally {
+            app.hideLoading();
+        }
+    },
+
+    // --- CONFRONTO LOGIC ---
+    createConfronto: async () => {
+        const nome = document.getElementById('newConfrontoName').value;
+        const p1Id = document.getElementById('newConfrontoP1').value;
+        const p2Id = document.getElementById('newConfrontoP2').value;
+
+        if(!nome || !p1Id || !p2Id || p1Id === p2Id) {
+            alert("Dados inválidos"); return;
+        }
+
+        const newConfrontoData = {
+            metadata: {
+                id: `conf_${crypto.randomUUID()}`,
+                nome: nome,
+                p1: app.state.lobby.pessoas.find(p => p.id === p1Id),
+                p2: app.state.lobby.pessoas.find(p => p.id === p2Id),
+                createdAt: new Date().toISOString()
+            },
+            adjustments: { general: {}, battles: {} },
+            battles: []
+        };
+
+        app.showLoading('Criando Confronto...');
+        try {
+            const res = await fetch(app.config.baseUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': app.config.activeApiKey,
+                    'X-Bin-Name': 'Confronto Data'
+                },
+                body: JSON.stringify(newConfrontoData)
+            });
+            const binData = await res.json();
+            const binId = binData.metadata.id;
+
+            app.state.lobby.confrontos.push({
+                id: newConfrontoData.metadata.id,
+                nome: nome,
+                binUrl: binId
+            });
+            await app.saveLobby();
+            app.closeModal('newConfrontoModal');
+            app.renderLobby();
+            document.getElementById('confrontoSelector').value = binId;
+            app.loadSelectedConfronto();
+
+        } catch (e) {
+            alert("Erro: " + e.message);
+        } finally {
+            app.hideLoading();
+        }
+    },
+
+        loadSelectedConfronto: async () => {
+
+            const binId = document.getElementById('confrontoSelector').value;
+
+            if(!binId) return alert("Selecione um confronto");
+
+    
+
+            app.showLoading('Carregando Confronto...');
+
+            try {
+
+                const data = await app.api(`${app.config.baseUrl}/${binId}`);
+
+                app.state.currentConfronto = data.record;
+
+                app.state.currentConfronto.binId = binId;
+
+                
+
+                if(!app.state.currentConfronto.adjustments) {
+
+                    app.state.currentConfronto.adjustments = { general: {}, battles: {} };
+
+                }
+
+    
+
+                document.getElementById('lobbyView').style.display = 'none';
+
+                document.getElementById('confrontoView').style.display = 'block';
+
+                
+
+                app.renderConfrontoHeader();
+
+                app.renderBattleSelector();
+
+                
+
+                if (app.state.currentConfronto.battles.length > 0) {
+
+                    // Seleciona a primeira batalha, o que vai renderizar os elementos e depois atualizar os scores
+
+                    app.selectBattle(app.state.currentConfronto.battles[0].id);
+
+                } else {
+
+                    document.getElementById('battleDetails').style.display = 'none';
+
+                    app.openNewBattleModal();
+
+                }
+
+    
+
+            } catch (e) {
+
+                console.error(e);
+
+                alert("Erro: " + e.message);
+
+            } finally {
+
+                app.hideLoading();
+
+            }
+
+        },
+
+    
+
+        renderConfrontoHeader: () => {
+
+            const c = app.state.currentConfronto;
+
+            document.getElementById('confrontoTitle').textContent = c.metadata.nome;
+
+            document.getElementById('p1NameGeneral').textContent = c.metadata.p1.nome;
+
+            document.getElementById('p2NameGeneral').textContent = c.metadata.p2.nome;
+
+            document.getElementById('p1NameFooter').textContent = c.metadata.p1.nome;
+
+            document.getElementById('p2NameFooter').textContent = c.metadata.p2.nome;
+
+            // updateScores será chamado dentro de selectBattle ou manualmente se necessário,
+
+            // mas aqui vamos chamar apenas para garantir o Geral, com proteção interna
+
+            app.updateScores();
+
+        },
+
+    
+
+        updateScores: () => {
+
+            let gP1 = 0, gP2 = 0, gDraws = 0;
+
+            app.state.currentConfronto.battles.forEach(b => {
+
+                let bP1 = 0, bP2 = 0, bDraws = 0;
+
+                b.results.forEach(r => {
+
+                    if(r.p1 > r.p2) bP1++; else if(r.p2 > r.p1) bP2++; else bDraws++;
+
+                });
+
+                const bAdj = app.state.currentConfronto.adjustments.battles[b.id] || {};
+
+                bP1 += (bAdj.p1 || 0); bP2 += (bAdj.p2 || 0); bDraws += (bAdj.draws || 0);
+
+                gP1 += bP1; gP2 += bP2; gDraws += bDraws;
+
+            });
+
+            const gAdj = app.state.currentConfronto.adjustments.general || {};
+
+            gP1 += (gAdj.p1 || 0); gP2 += (gAdj.p2 || 0); gDraws += (gAdj.draws || 0);
+
+    
+
+            // Atualiza elementos GERAIS (sempre existem na view de confronto)
+
+            const elP1G = document.getElementById('p1ScoreGeneral');
+
+            if(elP1G) elP1G.textContent = gP1;
+
+            const elP2G = document.getElementById('p2ScoreGeneral');
+
+            if(elP2G) elP2G.textContent = gP2;
+
+            const elDrawsG = document.getElementById('drawsGeneralFooter');
+
+            if(elDrawsG) elDrawsG.textContent = gDraws;
+
+            const elP1GF = document.getElementById('p1GeneralFooter');
+
+            if(elP1GF) elP1GF.textContent = gP1;
+
+            const elP2GF = document.getElementById('p2GeneralFooter');
+
+            if(elP2GF) elP2GF.textContent = gP2;
+
+    
+
+            // Atualiza elementos da BATALHA (só existem se uma batalha estiver selecionada e renderizada)
+
+            if(app.state.currentBattleId) {
+
+                const battle = app.state.currentConfronto.battles.find(b => b.id === app.state.currentBattleId);
+
+                if(battle) {
+
+                    let bP1 = 0, bP2 = 0, bDraws = 0;
+
+                    battle.results.forEach(r => {
+
+                        if(r.p1 > r.p2) bP1++; else if(r.p2 > r.p1) bP2++; else bDraws++;
+
+                    });
+
+                    const bAdj = app.state.currentConfronto.adjustments.battles[battle.id] || {};
+
+                    
+
+                    const elP1B = document.getElementById('p1ScoreBattle');
+
+                    if(elP1B) elP1B.textContent = bP1 + (bAdj.p1 || 0);
+
+                    
+
+                    const elP2B = document.getElementById('p2ScoreBattle');
+
+                    if(elP2B) elP2B.textContent = bP2 + (bAdj.p2 || 0);
+
+                    
+
+                    const elDrawsB = document.getElementById('drawsBattle');
+
+                    if(elDrawsB) elDrawsB.textContent = bDraws + (bAdj.draws || 0);
+
+                }
+
+            }
+
+        },
+
+    editScore: async (context, key) => {
+        let currentVal = 0;
+        if(context === 'general') {
+            if(key === 'draws') currentVal = parseInt(document.getElementById('drawsGeneralFooter').textContent);
+            else currentVal = parseInt(document.getElementById(`${key}ScoreGeneral`).textContent);
+        } else {
+            if(key === 'draws') currentVal = parseInt(document.getElementById('drawsBattle').textContent);
+            else currentVal = parseInt(document.getElementById(`${key}ScoreBattle`).textContent);
+        }
+
+        const newValStr = prompt(`Editar Valor:`, currentVal);
+        if(newValStr === null) return;
+        const newVal = parseInt(newValStr);
+        if(isNaN(newVal)) return alert("Inválido");
+
+        const adjObj = app.state.currentConfronto.adjustments;
+        let targetAdj = {};
+        
+        if(context === 'general') {
+            if(!adjObj.general) adjObj.general = {};
+            targetAdj = adjObj.general;
+        } else {
+            if(!app.state.currentBattleId) return;
+            if(!adjObj.battles[app.state.currentBattleId]) adjObj.battles[app.state.currentBattleId] = {};
+            targetAdj = adjObj.battles[app.state.currentBattleId];
+        }
+
+        const diff = newVal - currentVal;
+        targetAdj[key] = (targetAdj[key] || 0) + diff;
+
+        app.updateScores();
+        await app.saveCurrentConfronto();
+    },
+
+    // --- BATTLE LOGIC ---
+    renderBattleSelector: () => {
+        const sel = document.getElementById('battleSelector');
+        sel.innerHTML = '';
+        app.state.currentConfronto.battles.forEach(b => {
+            const d1 = app.state.lobby.drafts.find(d => d.id === b.draft1Id);
+            const d2 = app.state.lobby.drafts.find(d => d.id === b.draft2Id);
+            sel.innerHTML += `<option value="${b.id}">${d1?.nome} x ${d2?.nome}</option>`;
+        });
+    },
+    openNewBattleModal: () => {
+        const p1Id = app.state.currentConfronto.metadata.p1.id;
+        const p2Id = app.state.currentConfronto.metadata.p2.id;
+        app.populateDraftSelect('newBattleDraft1', p1Id);
+        app.populateDraftSelect('newBattleDraft2', p2Id);
+        document.getElementById('lblDraftP1').textContent = `Draft ${app.state.currentConfronto.metadata.p1.nome}`;
+        document.getElementById('lblDraftP2').textContent = `Draft ${app.state.currentConfronto.metadata.p2.nome}`;
+        app.openModal('newBattleModal');
+    },
+    createBattle: async () => {
+        const d1Id = document.getElementById('newBattleDraft1').value;
+        const d2Id = document.getElementById('newBattleDraft2').value;
+        if(!d1Id || !d2Id) return alert("Selecione drafts");
+        const newBattle = {
+            id: `bat_${crypto.randomUUID()}`, draft1Id: d1Id, draft2Id: d2Id, results: [], notes: ""
+        };
+        app.state.currentConfronto.battles.push(newBattle);
+        await app.saveCurrentConfronto();
+        app.renderBattleSelector();
+        app.selectBattle(newBattle.id);
+        document.getElementById('battleSelector').value = newBattle.id;
+        app.closeModal('newBattleModal');
+    },
+    selectBattle: (battleId) => {
+        app.state.currentBattleId = battleId;
+        app.state.visibleResults = 10; // Reset pagination
+        
+        const battle = app.state.currentConfronto.battles.find(b => b.id === battleId);
+        if(!battle) return;
+        document.getElementById('battleDetails').style.display = 'block';
+        const d1 = app.state.lobby.drafts.find(d => d.id === battle.draft1Id);
+        const d2 = app.state.lobby.drafts.find(d => d.id === battle.draft2Id);
+        app.renderDraftCard('p1', d1); app.renderDraftCard('p2', d2);
+        app.renderBattleResults(battle);
+        
+        // Força atualização dos scores agora que o DOM da batalha existe
+        setTimeout(() => app.updateScores(), 0);
+    },
+    renderDraftCard: (prefix, draft) => {
+        document.getElementById(`${prefix}DraftName`).textContent = draft ? draft.nome : '?';
+        const media = document.getElementById(`${prefix}Media`);
+        if(!draft) media.innerHTML = '';
+        else if(draft.urlFormacao.includes('ogol')) media.innerHTML = `<iframe src="${draft.urlFormacao}"></iframe>`;
+        else media.innerHTML = `<img src="${draft.urlFormacao}" onerror="this.style.display='none'">`;
+    },
+    
+    // --- NOTES LOGIC ---
+    openNotesModal: () => {
+        const battle = app.state.currentConfronto.battles.find(b => b.id === app.state.currentBattleId);
+        if(!battle) return;
+        document.getElementById('battleNotes').value = battle.notes || "";
+        app.openModal('notesModal');
+    },
+    saveNotes: async () => {
+        const notes = document.getElementById('battleNotes').value;
+        const battle = app.state.currentConfronto.battles.find(b => b.id === app.state.currentBattleId);
+        if(battle) {
+            battle.notes = notes;
+            await app.saveCurrentConfronto();
+            app.closeModal('notesModal');
+        }
+    },
+
+    // --- RESULTS TABLE & PAGINATION ---
+    loadMoreResults: () => {
+        app.state.visibleResults += 10;
+        const battle = app.state.currentConfronto.battles.find(b => b.id === app.state.currentBattleId);
+        app.renderBattleResults(battle);
+    },
+
+    renderBattleResults: (battle) => {
+        const tbody = document.getElementById('resultsTableBody');
+        tbody.innerHTML = '';
+        
+        // Clone and reverse to show newest first
+        const allResults = [...battle.results].reverse();
+        const visible = allResults.slice(0, app.state.visibleResults);
+        
+        // Calculate real index (since we reversed)
+        const total = battle.results.length;
+
+        visible.forEach((r, i) => {
+            // Original index is: total - 1 - i
+            const realIdx = total - 1 - i; 
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td>${realIdx + 1}</td>
+                <td style="color:${r.p1 > r.p2 ? 'var(--winner1)' : '#fff'}">${r.p1}</td>
+                <td style="color:${r.p2 > r.p1 ? 'var(--winner1)' : '#fff'}">${r.p2}</td>
+                <td><button class="danger" style="padding:2px 8px;" onclick="app.deleteResult(${realIdx})">🗑️</button></td>
+            `;
+        });
+        
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        if (allResults.length > app.state.visibleResults) {
+            if(!loadMoreBtn) {
+                // Cria o botão se não existir (caso tenha sido removido ou não criado no HTML base da tabela)
+                const btn = document.createElement('div');
+                btn.id = 'loadMoreBtn';
+                btn.className = 'load-more-container';
+                btn.onclick = () => app.loadMoreResults();
+                document.querySelector('.panel .table-header-custom').parentNode.appendChild(btn);
+            } else {
+                loadMoreBtn.style.display = 'block';
+            }
+            document.getElementById('loadMoreBtn').textContent = `Mostrar Mais (${allResults.length - app.state.visibleResults} restantes)`;
+        } else if (loadMoreBtn) {
+            loadMoreBtn.style.display = 'none';
+        }
+
+        // Atualiza os nomes nos cabeçalhos da tabela
+        const p1Name = app.state.currentConfronto.metadata.p1.nome;
+        const p2Name = app.state.currentConfronto.metadata.p2.nome;
+        
+        const thP1 = document.getElementById('thP1');
+        const thP2 = document.getElementById('thP2');
+        
+        if (thP1) thP1.textContent = p1Name;
+        if (thP2) thP2.textContent = p2Name;
+    },
+
+    // --- RESULT LOGIC (Actions) ---
+    openAddResultModal: () => {
+        document.getElementById('resGolsP1').value = 0;
+        document.getElementById('resGolsP2').value = 0;
+        document.getElementById('lblResP1').textContent = app.state.currentConfronto.metadata.p1.nome;
+        document.getElementById('lblResP2').textContent = app.state.currentConfronto.metadata.p2.nome;
+        app.openModal('addResultModal');
+    },
+    saveResult: async () => {
+        const p1 = parseInt(document.getElementById('resGolsP1').value);
+        const p2 = parseInt(document.getElementById('resGolsP2').value);
+        const battle = app.state.currentConfronto.battles.find(b => b.id === app.state.currentBattleId);
+        battle.results.push({ p1, p2, date: new Date().toISOString() });
+        await app.saveCurrentConfronto();
+        app.closeModal('addResultModal');
+        app.selectBattle(app.state.currentBattleId);
+    },
+    deleteResult: async (index) => {
+        if(!confirm("Excluir resultado?")) return;
+        const battle = app.state.currentConfronto.battles.find(b => b.id === app.state.currentBattleId);
+        battle.results.splice(index, 1);
+        await app.saveCurrentConfronto();
+        app.selectBattle(app.state.currentBattleId);
+    },
+    deleteCurrentBattle: async () => {
+        if(!confirm("Excluir esta batalha?")) return;
+        app.state.currentConfronto.battles = app.state.currentConfronto.battles.filter(b => b.id !== app.state.currentBattleId);
+        await app.saveCurrentConfronto();
+        if(app.state.currentConfronto.battles.length > 0) {
+            app.renderBattleSelector();
+            app.selectBattle(app.state.currentConfronto.battles[0].id);
+        } else {
+            app.renderBattleSelector();
+            document.getElementById('battleDetails').style.display = 'none';
+        }
+    },
+    saveCurrentConfronto: async () => {
+        app.showLoading('Salvando...');
+        try {
+            await app.api(`${app.config.baseUrl}/${app.state.currentConfronto.binId}`, 'PUT', app.state.currentConfronto);
+            app.updateScores();
+        } catch (e) {
+            alert("Erro salvar: " + e.message);
+        } finally {
+            app.hideLoading();
+        }
+    },
+    
+    // --- BACKUP / MIGRAÇÃO INTELIGENTE ---
+    openBackupModal: () => app.openModal('backupModal'),
+    downloadBackup: async () => {
+        app.showLoading('Gerando backup...');
+        try {
+            const backup = { lobby: app.state.lobby, bins: {} };
+            for (const conf of app.state.lobby.confrontos) {
+                const data = await app.api(`${app.config.baseUrl}/${conf.binUrl}`);
+                backup.bins[conf.binUrl] = data.record;
+            }
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rinhas_backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        } catch(e) {
+            alert("Erro backup: " + e.message);
+        } finally {
+            app.hideLoading();
+        }
+    },
+    restoreBackup: async (input) => {
+        const file = input.files[0];
+        if(!file) return;
+        const newKey = document.getElementById('targetApiKey').value.trim();
+        const useKey = newKey || app.config.activeApiKey;
+
+        if(!confirm("Isso recriará toda a estrutura de bins. Se você forneceu uma chave nova, os dados irão para a nova conta e o sistema atualizará o roteador.")) {
+            input.value = ''; return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                app.showLoading('Iniciando Migração...');
+                const backup = JSON.parse(e.target.result);
+                const newConfrontos = [];
+
+                // 1. Recriar Bins de Confronto na Conta Destino
+                for (const oldConf of backup.lobby.confrontos) {
+                    const binContent = backup.bins[oldConf.binUrl];
+                    if(binContent) {
+                        const res = await fetch(app.config.baseUrl, {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'X-Master-Key': useKey,
+                                'X-Bin-Name': 'Restored Confronto'
+                            },
+                            body: JSON.stringify(binContent)
+                        });
+                        const meta = await res.json();
+                        newConfrontos.push({
+                            id: oldConf.id, nome: oldConf.nome, binUrl: meta.metadata.id
+                        });
+                    }
+                }
+
+                // 2. Criar Novo Lobby na Conta Destino
+                const newLobbyState = {
+                    pessoas: backup.lobby.pessoas,
+                    drafts: backup.lobby.drafts,
+                    confrontos: newConfrontos
+                };
+
+                const resLobby = await fetch(app.config.baseUrl, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': useKey,
+                        'X-Bin-Name': 'Lobby Principal'
+                    },
+                    body: JSON.stringify(newLobbyState)
+                });
+                const metaLobby = await resLobby.json();
+                const newLobbyId = metaLobby.metadata.id;
+
+                // 3. ATUALIZAR O ROTEADOR MESTRE
+                await app.updateMasterPointer(useKey, newLobbyId);
+
+                alert("Migração concluída com sucesso! O sistema foi atualizado para usar a nova conta.");
+                location.reload(); 
+
+            } catch(err) {
+                alert("Erro restore: " + err.message);
+            } finally {
+                app.hideLoading();
+                input.value = '';
+            }
+        };
+        reader.readAsText(file);
+    },
+
+    // --- UTILS ---
+    showLobby: () => {
+        document.getElementById('confrontoView').style.display = 'none';
+        document.getElementById('lobbyView').style.display = 'block';
+        app.loadLobby();
+    },
+    populatePeopleSelect: (id) => {
+        const s = document.getElementById(id);
+        s.innerHTML = '';
+        app.state.lobby.pessoas.forEach(p => s.innerHTML += `<option value="${p.id}">${p.nome}</option>`);
+    },
+    populateDraftSelect: (id, pessoaId) => {
+        const s = document.getElementById(id);
+        s.innerHTML = '';
+        app.state.lobby.drafts.filter(d => d.idPessoa === pessoaId).forEach(d => s.innerHTML += `<option value="${d.id}">${d.nome}</option>`);
+    },
+    openModal: (id) => document.getElementById(id).style.display = 'flex',
+    closeModal: (id) => document.getElementById(id).style.display = 'none',
+    openPeopleManager: () => {
+        const content = document.getElementById('managerContent');
+        content.innerHTML = `
+            <div class="form-group">
+                <input type="text" id="newPessoaName" placeholder="Nome">
+                <button onclick="app.addPessoa()">Adicionar</button>
+            </div>
+            <ul style="list-style:none; padding:0;">
+                ${app.state.lobby.pessoas.map(p => `
+                    <li style="display:flex; justify-content:space-between; margin:5px 0; background:#333; padding:5px;">
+                        ${p.nome}
+                        <button class="danger" style="padding:2px 5px;" onclick="app.deletePessoa('${p.id}')">X</button>
+                    </li>`).join('')}
+            </ul>
+        `;
+        app.openModal('managerModal');
+    },
+    addPessoa: async () => {
+        const nome = document.getElementById('newPessoaName').value;
+        if(!nome) return;
+        app.state.lobby.pessoas.push({ id: `p_${crypto.randomUUID()}`, nome });
+        await app.saveLobby();
+        app.openPeopleManager();
+    },
+    deletePessoa: async (id) => {
+        if(!confirm('Excluir?')) return;
+        app.state.lobby.pessoas = app.state.lobby.pessoas.filter(p => p.id !== id);
+        await app.saveLobby();
+        app.openPeopleManager();
+    },
+    openDraftsManager: () => {
+         const content = document.getElementById('managerContent');
+         content.innerHTML = `
+            <div class="form-group">
+                <label>Pessoa:</label>
+                <select id="draftManagerPerson"></select>
+            </div>
+            <div class="form-group"><input id="draftManagerName" placeholder="Nome Draft"></div>
+            <div class="form-group"><input id="draftManagerUrl" placeholder="URL"></div>
+            <button onclick="app.addDraft()">Salvar Draft</button>
+            <hr>
+            <ul style="list-style:none; padding:0; max-height:300px; overflow-y:auto;">
+                ${app.state.lobby.drafts.map(d => {
+                    const p = app.state.lobby.pessoas.find(p=>p.id===d.idPessoa)?.nome || '?';
+                    return `<li style="display:flex; justify-content:space-between; margin:5px 0; background:#333; padding:5px;">
+                        <span>${d.nome} (${p})</span>
+                        <button class="danger" style="padding:2px 5px;" onclick="app.deleteDraft('${d.id}')">X</button>
+                    </li>`;
+                }).join('')}
+            </ul>
+         `;
+         setTimeout(() => {
+             const s = document.getElementById('draftManagerPerson');
+             app.state.lobby.pessoas.forEach(p => s.innerHTML += `<option value="${p.id}">${p.nome}</option>`);
+         }, 100);
+         app.openModal('managerModal');
+    },
+    addDraft: async () => {
+        const idPessoa = document.getElementById('draftManagerPerson').value;
+        const nome = document.getElementById('draftManagerName').value;
+        const url = document.getElementById('draftManagerUrl').value;
+        if(!idPessoa || !nome || !url) return alert('Preencha tudo');
+        app.state.lobby.drafts.push({
+            id: `d_${crypto.randomUUID()}`, idPessoa, nome, urlFormacao: url
+        });
+        await app.saveLobby();
+        alert('Draft criado');
+        app.openDraftsManager();
+    },
+    deleteDraft: async (id) => {
+        if(!confirm("Excluir draft?")) return;
+        app.state.lobby.drafts = app.state.lobby.drafts.filter(d => d.id !== id);
+        await app.saveLobby();
+        app.openDraftsManager();
+    }
+};
+
+document.addEventListener('DOMContentLoaded', app.init);
+</script>
+
+</body>
+</html>
